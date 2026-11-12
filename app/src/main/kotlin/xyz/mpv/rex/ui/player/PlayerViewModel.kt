@@ -113,6 +113,7 @@ class PlayerViewModel(
   private val playbackStateRepository: xyz.mpv.rex.domain.playbackstate.repository.PlaybackStateRepository by inject()
   private val recentlyPlayedRepository: xyz.mpv.rex.domain.recentlyplayed.repository.RecentlyPlayedRepository by inject()
   private val wyzieRepository: WyzieSearchRepository by inject()
+  private val subtitleSearchService: xyz.mpv.rex.repository.subtitle.SubtitleSearchService by inject()
 
   private val browserPreferences: xyz.mpv.rex.preferences.BrowserPreferences by inject()
   private val miniPlayerStateManager: MiniPlayerStateManager by inject()
@@ -132,6 +133,7 @@ class PlayerViewModel(
   private val _subtitleManager = SubtitleManager(
     context = appContext,
     wyzieRepository = wyzieRepository,
+    subtitleSearchService = subtitleSearchService,
     subtitlesPreferences = subtitlesPreferences,
     scope = viewModelScope,
     onShowToast = { showToast(it) }

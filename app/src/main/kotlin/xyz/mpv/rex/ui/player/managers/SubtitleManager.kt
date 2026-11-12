@@ -7,6 +7,7 @@ import android.util.Log
 import xyz.mpv.rex.R
 import xyz.mpv.rex.repository.wyzie.WyzieErrorKind
 import xyz.mpv.rex.repository.wyzie.WyzieException
+import xyz.mpv.rex.repository.subtitle.SubtitleSearchService
 import xyz.mpv.rex.repository.wyzie.WyzieSearchRepository
 import xyz.mpv.rex.repository.wyzie.WyzieSubtitle
 import xyz.mpv.rex.repository.wyzie.WyzieTmdbResult
@@ -35,6 +36,7 @@ import java.io.File
 class SubtitleManager(
     private val context: Context,
     private val wyzieRepository: WyzieSearchRepository,
+    private val subtitleSearchService: SubtitleSearchService,
     private val subtitlesPreferences: SubtitlesPreferences,
     private val scope: CoroutineScope,
     private val onShowToast: (String) -> Unit
@@ -336,7 +338,7 @@ class SubtitleManager(
         searchSubtitlesJob = scope.launch {
             _isSearchingSub.value = true
             clearSearchError()
-            wyzieRepository.search(query, season, episode, year)
+            subtitleSearchService.search(query, season, episode, year)
                 .onSuccess { results ->
                     _wyzieSearchResults.value = results
                     _hasSearched.value = true
@@ -355,7 +357,7 @@ class SubtitleManager(
     fun downloadSubtitle(subtitle: WyzieSubtitle, mediaTitle: String) {
         scope.launch {
             _isDownloadingSub.value = true
-            wyzieRepository.download(subtitle, mediaTitle)
+            subtitleSearchService.download(subtitle, mediaTitle)
                 .onSuccess { uri ->
                     addSubtitle(uri)
                 }

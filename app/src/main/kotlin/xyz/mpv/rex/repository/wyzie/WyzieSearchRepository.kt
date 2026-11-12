@@ -58,6 +58,8 @@ data class WyzieSubtitle(
   val downloadCount: Int? = null,
   val isHashMatch: Boolean = false,
   val ai: Boolean = false,
+  /** Which engine produced this row, so a download goes back to the right source. */
+  val provider: SubtitleProvider = SubtitleProvider.MPVRX_SUBTITLE_HUB,
 ) {
   val displayName: String get() = fileName ?: release ?: media ?: "Unknown Subtitle"
   val displayLanguage: String get() = display ?: language ?: "Unknown"
@@ -874,6 +876,7 @@ private fun WyzieSubtitle.toOnlineSubtitle(): OnlineSubtitle =
 
 private fun OnlineSubtitle.toWyzieSubtitle(): WyzieSubtitle =
   WyzieSubtitle(
+    provider = provider,
     id = id,
     url = url,
     format = format,

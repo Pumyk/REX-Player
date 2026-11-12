@@ -2,6 +2,10 @@ package xyz.mpv.rex.di
 
 import xyz.mpv.rex.domain.anime4k.Anime4KManager
 import xyz.mpv.rex.domain.hdr.HdrToysManager
+import xyz.mpv.rex.repository.subtitle.OnlineSubtitleFileStore
+import xyz.mpv.rex.repository.subtitle.OnlineSubtitleOrchestrator
+import xyz.mpv.rex.repository.subtitle.SubtitleSearchService
+import xyz.mpv.rex.repository.subtitlehub.MpvRxSubtitleHubRepository
 import xyz.mpv.rex.repository.wyzie.WyzieSearchRepository
 import xyz.mpv.rex.ui.player.managers.PlaybackManager
 import xyz.mpv.rex.ui.player.HeadlessPlaybackController
@@ -22,7 +26,16 @@ val domainModule = module {
     }
     single { Anime4KManager(androidContext()) }
     single { HdrToysManager(androidContext()) }
-    single { WyzieSearchRepository(androidContext(), get(), get(), get()) }
+    single { OnlineSubtitleFileStore(androidContext(), get()) }
+    single { WyzieSearchRepository(androidContext(), get(), get(), get(), get()) }
+    single { MpvRxSubtitleHubRepository(get(), get(), get(), get()) }
+    single {
+      OnlineSubtitleOrchestrator(
+        wyzieProvider = get<WyzieSearchRepository>(),
+        subtitleHubProvider = get<MpvRxSubtitleHubRepository>(),
+      )
+    }
+    single { SubtitleSearchService(get(), get(), get(), get()) }
     single { PlaybackManager(get()) }
     single { MiniPlayerStateManager() }
     single { HeadlessPlaybackController(androidContext()) }
