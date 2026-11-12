@@ -1,0 +1,77 @@
+name: Build APK
+
+# Build-only workflow for the merged fork. No releases, no tags, no publishing.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Ensure Android SDK platform 36
+        run: |
+          set -e
+          SDKMANAGER=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -n1 || true)
+          if [ -z "$SDKMANAGER" ]; then
+            echo "sdkmanager not found, relying on preinstalled SDK"
+            ls "$ANDROID_HOME/platforms" || true
+            exit 0
+          fi
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          if [ ! -d "$ANDROID_HOME/platforms/android-36" ]; then
+            "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" || \
+            "$SDKMANAGER" "platforms;android-36" || true
+          fi
+          ls "$ANDROID_HOME/platforms"
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Assemble debug APK
+        run: ./gradlew assembleDebug -x lint --stacktrace --no-daemon
+
+      - name: Show outputs
+        if: always()
+        run: find app/build/outputs -name "*.apk" -type f -exec ls -lh {} \; || true
+
+      - name: Upload debug APKs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rex-merged-debug-${{ github.sha }}
+          path: |
+            app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload build reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports-${{ github.sha }}
+          path: |
+            app/build/reports/**
+            **/build/reports/**
+          if-no-files-found: ignore
+          retention-days: 7
