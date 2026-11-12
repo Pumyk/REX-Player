@@ -30,6 +30,8 @@ android {
     buildConfigField("boolean", "ENABLE_UPDATE_FEATURE", "true")
     buildConfigField("boolean", "SCOPED_STORAGE_ONLY", "false")
     buildConfigField("boolean", "IS_PREVIEW", "false")
+    // This fork is sideload-only, so the ported mpvRx subtitle sources are all available.
+    buildConfigField("boolean", "IS_PLAY_STORE_BUILD", "false")
   }
 
   dependenciesInfo {
@@ -201,6 +203,8 @@ dependencies {
   implementation(libs.kotlinx.immutable.collections)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.okhttp)
+  implementation(libs.jsoup)
+  implementation(libs.libarchive.android)
 
   implementation(libs.truetype.parser)
   implementation(libs.fsaf)

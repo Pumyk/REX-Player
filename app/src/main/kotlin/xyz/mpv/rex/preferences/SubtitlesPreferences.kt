@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import xyz.mpv.rex.preferences.preference.PreferenceStore
 import xyz.mpv.rex.preferences.preference.getEnum
+import xyz.mpv.rex.repository.subtitle.OnlineSubtitleSearchMode
 import xyz.mpv.rex.ui.player.controls.components.panels.SubtitlesBorderStyle
 
 class SubtitlesPreferences(
@@ -61,6 +62,30 @@ class SubtitlesPreferences(
   val wyzieEncodings = preferenceStore.getStringSet("wyzie_encodings", setOf("utf-8"))
   val wyzieHearingImpaired = preferenceStore.getBoolean("wyzie_hi", false)
   val wyzieApiKey = preferenceStore.getString("wyzie_api_key", "")
+
+  // --- Ported from mpvRx: online subtitle search core -------------------------
+  /** Which engine online search uses. SUBHUB needs no API key, so it is the default. */
+  val onlineSubtitleSearchMode =
+    preferenceStore.getEnum("online_subtitle_search_mode", OnlineSubtitleSearchMode.SUBHUB)
+
+  /** Sources used by the keyless subtitle hub. "all" means every keyless source. */
+  val subtitleHubSources =
+    preferenceStore.getStringSet("subtitle_hub_sources", setOf("all"))
+
+  val betaSeriesApiKey = preferenceStore.getString("betaseries_api_key", "")
+  val jimakuApiKey = preferenceStore.getString("jimaku_api_key", "")
+  val subSourceApiKey = preferenceStore.getString("subsource_api_key", "")
+  val subsRoApiKey = preferenceStore.getString("subs_ro_api_key", "")
+  val subXApiKey = preferenceStore.getString("subx_api_key", "")
+
+  val wyzieCachedSourcesJson = preferenceStore.getString("wyzie_cached_sources_json", "")
+  val wyzieRelease = preferenceStore.getString("wyzie_release", "")
+  val wyzieFile = preferenceStore.getString("wyzie_file", "")
+  val wyzieOrigin = preferenceStore.getString("wyzie_origin", "")
+  val wyzieRefresh = preferenceStore.getBoolean("wyzie_refresh", false)
+  val wyzieAiSubtitles = preferenceStore.getString("wyzie_ai_subtitles", "all")
+
+  val subtitleSearchLanguages = subdlLanguages
 }
 
 enum class SubtitleJustification(
