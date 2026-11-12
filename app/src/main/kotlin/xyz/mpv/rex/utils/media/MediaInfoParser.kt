@@ -113,22 +113,40 @@ object MediaInfoParser {
     // ── Regex patterns ───────────────────────────────────────────────────────────
 
     // Season-Episode: S01E02, S1E2, s01e02 — also captures multi-episode S01E01E02
-    private val SEASON_EPISODE_REGEX = Regex("""[Ss](\d{1,2})[Ee](\d{1,4})""")
+    // Ported from mpvRx: the separator between the season and episode markers is optional and
+    // may be whitespace. "Demon Slayer S01 E06" used to parse as no season/episode at all and the
+    // junk stayed in the title, which is what broke the subtitle search.
+    private val SEASON_EPISODE_REGEX =
+        Regex("""(?<![\p{L}\p{N}])[Ss](\d{1,4})[\s.:_-]*[Ee](\d{1,4})(?:[Vv]\d{1,2})?(?=$|[^\p{L}\p{N}]|[Ee]\d)""")
 
     // Cross-format: 1x02 format
-    private val CROSS_FORMAT_REGEX = Regex("""\b(\d{1,2})[xX](\d{1,4})\b""")
+    private val CROSS_FORMAT_REGEX =
+        Regex("""(?<![\p{L}\p{N}])(\d{1,2})[xX](\d{1,4})(?:[Vv]\d{1,2})?(?=$|[^\p{L}\p{N}])""")
 
     // EP marker: EP05, Ep5 — with word boundary to avoid matching inside words
-    private val EP_MARKER_REGEX = Regex("""\b[Ee][Pp](\d{1,4})\b""")
+    private val EP_MARKER_REGEX =
+        Regex("""(?<![\p{L}\p{N}])[Ee][Pp][\s.:_-]*(\d{1,4})(?:[Vv]\d{1,2})?(?=$|[^\p{L}\p{N}])""")
+
+    /** Standalone E-prefix (E05) as mpvRx reads it. */
+    private val E_PREFIX_REGEX =
+        Regex("""(?<![\p{L}\p{N}])[Ee](\d{1,4})(?:[Vv]\d{1,2})?(?=$|[^\p{L}\p{N}]|[Ee]\d)""")
 
     // Episode word: Episode 5, EPISODE 05
-    private val EPISODE_WORD_REGEX = Regex("""\b[Ee]pisode\s*(\d{1,4})\b""")
+    private val EPISODE_WORD_REGEX =
+        Regex(
+            """(?<![\p{L}\p{N}])(?:ep(?:isodes?)?|episoden?|episodios?|capítulos?|épisodes?|episódios?|folgen?|эпизод|епізод|серия|серія|الحلقة|حلقة|एपिसोड|エピソード)[\s.:_-]*(\d{1,4})(?:v\d{1,2})?(?=$|[^\p{L}\p{N}])""",
+            RegexOption.IGNORE_CASE,
+        )
 
     // Season word: Season 3, SEASON 3
-    private val SEASON_WORD_REGEX = Regex("""\b[Ss]eason\s*(\d{1,2})\b""")
+    private val SEASON_WORD_REGEX =
+        Regex(
+            """(?<![\p{L}\p{N}])(?:season|staffel|saison|temporada|сезон|الموسم|मौसम|シーズン)[\s.:_-]*(\d{1,2})(?![\p{L}\p{N}])""",
+            RegexOption.IGNORE_CASE,
+        )
 
     // Year: 1990-2029
-    private val YEAR_REGEX = Regex("""\b(19|20)\d{2}\b""")
+    private val YEAR_REGEX = Regex("""(?<![\p{L}\p{N}])(?:18[789]\d|19\d{2}|20\d{2})(?![\p{L}\p{N}])""")
 
     // Hash episode: #05
     private val HASH_EPISODE_REGEX = Regex("""#(\d{1,4})""")
@@ -191,6 +209,19 @@ object MediaInfoParser {
         // Priority 4: EP05 format
         else if (epMarkerMatch != null) {
             episode = epMarkerMatch.groupValues[1].toIntOrNull()
+        }
+
+        // Priority 5: standalone E05, as mpvRx reads it. Anime files often arrive as
+        // "Show - E05" or "Show E05" with no season marker at all.
+        if (episode == null) {
+            E_PREFIX_REGEX.find(fileName)?.let { match ->
+                episode = match.groupValues[1].toIntOrNull()
+            }
+        }
+
+        // Anime numbering without a season marker means season 1.
+        if (episode != null && season == null) {
+            season = 1
         }
 
         // Season from "Season X" format (e.g., "Attack on Titan Season 3 Episode 12")

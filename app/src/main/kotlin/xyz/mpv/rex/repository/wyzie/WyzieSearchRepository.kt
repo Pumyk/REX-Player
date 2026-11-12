@@ -795,9 +795,9 @@ class WyzieSearchRepository(
       client.newCall(request).awaitResponse().use { response ->
         if (!response.isSuccessful) throw IOException("TMDB search failed: ${response.code}")
         val body = response.body.string()
-        val results = json.decodeFromString<WyzieTmdbResponse>(body).results
-        if (results.isEmpty()) throw IOException("TMDB search returned no results")
-        return results
+        // REX change: an empty result set is a real answer, not a failure. Throwing here made
+        // every title TMDb could not match report as "can't reach the subtitle server".
+        return json.decodeFromString<WyzieTmdbResponse>(body).results
       }
     } catch (cancellation: CancellationException) {
       throw cancellation

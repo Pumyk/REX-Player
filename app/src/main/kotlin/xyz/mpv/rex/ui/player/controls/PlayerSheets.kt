@@ -222,6 +222,9 @@ fun PlayerSheets(
         onSearchSubtitles = { query ->
           val queryInfo = MediaInfoParser.parse(query)
           val fileInfo = MediaInfoParser.parse(viewModel.currentMediaTitle)
+          // Resolve the show too: anime especially needs a concrete TMDb series, season and
+          // episode before the subtitle sites have anything to match.
+          viewModel.findMedia(queryInfo.title.ifBlank { query })
           viewModel.subtitleManager.searchSubtitles(
             query = queryInfo.title.ifBlank { query },
             season = selectedSeason?.season_number ?: queryInfo.season ?: fileInfo.season,

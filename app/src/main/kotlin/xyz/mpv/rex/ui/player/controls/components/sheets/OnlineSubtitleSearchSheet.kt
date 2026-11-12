@@ -225,7 +225,10 @@ fun OnlineSubtitleSearchSheet(
 
         // Autocomplete Results
         AnimatedVisibility(
-          visible = showAutocomplete && mediaSearchResults.isNotEmpty(),
+          // REX change: the sheet auto-searches on open, and `showAutocomplete` only flips
+          // while typing, so the show list used to stay hidden. Show it whenever there are
+          // results and no show has been picked yet.
+          visible = mediaSearchResults.isNotEmpty() && (showAutocomplete || selectedTvShow == null),
           enter = expandVertically(),
           exit = shrinkVertically()
       ) {
@@ -243,7 +246,7 @@ fun OnlineSubtitleSearchSheet(
                 mediaSearchResults.forEachIndexed { index, result ->
                 TmdbResultRow(
                   result = result,
-                  onClick = { 
+                  onClick = {
                     searchQuery = result.title
                     onSelectMedia(result)
                     showAutocomplete = false
@@ -254,6 +257,53 @@ fun OnlineSubtitleSearchSheet(
                   HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 }
               }
+            }
+          }
+        }
+
+        // Explicit picker, always reachable. mpvRx lets the user choose the show, then the
+        // season, then the episode and search from there; pressing the magnifier alone used to
+        // depend on the suggestions dropdown appearing on its own.
+        if (selectedTvShow == null && hasApiKey) {
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(horizontal = MaterialTheme.spacing.medium)
+              .padding(bottom = 8.dp)
+              .clickable {
+                onSearchMedia(searchQuery.ifBlank { mediaInfo.title })
+              }
+              .background(
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                RoundedCornerShape(16.dp),
+              )
+              .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            Icon(
+              Icons.Default.LiveTv,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary,
+              modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+              Text(
+                text = if (isSearchingMedia) "Finding the show…" else "Select show, season and episode",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+              )
+              Text(
+                text = "Tap to pick the exact series, then choose the season and episode.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+              )
+            }
+            if (isSearchingMedia) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+              )
             }
           }
         }

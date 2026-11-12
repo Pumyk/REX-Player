@@ -85,25 +85,23 @@ class SubtitleSearchService(
         }
 
       if (settled == null) {
-        // Budget spent. Show what arrived rather than spinning forever.
-        val partial = latest.get()
-        if (partial.isNotEmpty()) {
-          Result.success(partial.map { it.toWyzieSubtitle() })
-        } else {
-          Result.failure(
-            WyzieException(
-              kind = WyzieErrorKind.NetworkError,
-              message = "Subtitle search timed out",
-            ),
-          )
-        }
+        // Budget spent. Show what arrived rather than spinning forever; a genuinely empty
+        // outcome is reported as no results instead of a network error.
+        Result.success(latest.get().map { it.toWyzieSubtitle() })
       } else {
         settled.fold(
           onSuccess = { results ->
             remember(results)
             Result.success(results.map { it.toWyzieSubtitle() })
           },
-          onFailure = { error -> Result.failure(classify(error, mode)) },
+          onFailure = { error ->
+            // No provider answering with anything is an empty result, not a broken network.
+            if (error.message?.contains("No subtitle providers", ignoreCase = true) == true) {
+              Result.success(emptyList())
+            } else {
+              Result.failure(classify(error, mode))
+            }
+          },
         )
       }
     }
