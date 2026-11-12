@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -139,6 +140,13 @@ object PreferencesScreen : Screen {
                   summary = stringResource(id = R.string.pref_appearance_summary),
                   icon = Icons.Outlined.Palette,
                   onClick = { backstack.add(AppearancePreferencesScreen) },
+                )
+                PreferenceItem(
+                  position = GroupPosition.MIDDLE,
+                  title = stringResource(id = R.string.pref_ai_title),
+                  summary = stringResource(id = R.string.pref_ai_summary),
+                  icon = Icons.Outlined.AutoAwesome,
+                  onClick = { backstack.add(AiPreferencesScreen) },
                 )
                 PreferenceItem(
                   position = GroupPosition.LAST,

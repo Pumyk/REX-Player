@@ -24,6 +24,8 @@ import xyz.mpv.rex.R
 import xyz.mpv.rex.preferences.PlayerPreferences
 import xyz.mpv.rex.preferences.preference.collectAsState
 import xyz.mpv.rex.presentation.Screen
+import xyz.mpv.rex.ui.preferences.GroupedPreferenceCard
+import xyz.mpv.rex.ui.preferences.PreferenceSectionHeader
 import xyz.mpv.rex.presentation.components.GroupPosition
 import xyz.mpv.rex.presentation.components.GroupedListColumn
 import xyz.mpv.rex.ui.player.BackgroundPlaybackMode
@@ -81,6 +83,93 @@ object PlayerPreferencesScreen : Screen {
               .padding(padding),
           contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = navBarHeight + 16.dp),
         ) {
+          // Intro / credits skip markers
+          item {
+            PreferenceSectionHeader(title = stringResource(R.string.pref_player_skip_markers))
+          }
+
+          item {
+            val enableIntroDb by preferences.enableIntroDb.collectAsState()
+            val autoSkipIntro by preferences.autoSkipIntro.collectAsState()
+            val autoSkipOutro by preferences.autoSkipOutro.collectAsState()
+            val chapterDetection by preferences.detectIntroOutroFromChapters.collectAsState()
+            val provider by preferences.introSegmentProvider.collectAsState()
+
+            GroupedListColumn {
+              GroupedPreferenceCard(position = GroupPosition.FIRST) {
+                SwitchPreference(
+                  value = enableIntroDb,
+                  onValueChange = preferences.enableIntroDb::set,
+                  title = { Text(text = stringResource(R.string.pref_player_enable_intro_db)) },
+                  summary = {
+                    Text(
+                      text = stringResource(R.string.pref_player_enable_intro_db_summary),
+                      color = MaterialTheme.colorScheme.outline,
+                    )
+                  },
+                )
+              }
+
+              GroupedPreferenceCard(position = GroupPosition.MIDDLE) {
+                SwitchPreference(
+                  value = chapterDetection,
+                  onValueChange = preferences.detectIntroOutroFromChapters::set,
+                  title = { Text(text = stringResource(R.string.pref_player_chapter_skip_detection)) },
+                  summary = {
+                    Text(
+                      text = stringResource(R.string.pref_player_chapter_skip_detection_summary),
+                      color = MaterialTheme.colorScheme.outline,
+                    )
+                  },
+                )
+              }
+
+              GroupedPreferenceCard(position = GroupPosition.MIDDLE) {
+                ListPreference(
+                  value = provider,
+                  onValueChange = preferences.introSegmentProvider::set,
+                  values = xyz.mpv.rex.preferences.IntroSegmentProvider.entries,
+                  valueToText = { AnnotatedString(it.displayName) },
+                  title = { Text(text = stringResource(R.string.pref_player_skip_provider)) },
+                  summary = {
+                    Text(
+                      text = provider.displayName,
+                      color = MaterialTheme.colorScheme.outline,
+                    )
+                  },
+                )
+              }
+
+              GroupedPreferenceCard(position = GroupPosition.MIDDLE) {
+                SwitchPreference(
+                  value = autoSkipIntro,
+                  onValueChange = preferences.autoSkipIntro::set,
+                  title = { Text(text = stringResource(R.string.pref_player_auto_skip_intro)) },
+                  summary = {
+                    Text(
+                      text = stringResource(R.string.pref_player_auto_skip_intro_summary),
+                      color = MaterialTheme.colorScheme.outline,
+                    )
+                  },
+                )
+              }
+
+              GroupedPreferenceCard(position = GroupPosition.LAST) {
+                SwitchPreference(
+                  value = autoSkipOutro,
+                  onValueChange = preferences.autoSkipOutro::set,
+                  title = { Text(text = stringResource(R.string.pref_player_auto_skip_outro)) },
+                  summary = {
+                    Text(
+                      text = stringResource(R.string.pref_player_auto_skip_outro_summary),
+                      color = MaterialTheme.colorScheme.outline,
+                    )
+                  },
+                )
+              }
+            }
+          }
+
           // General Section
           item {
             PreferenceSectionHeader(title = stringResource(R.string.pref_player_general))

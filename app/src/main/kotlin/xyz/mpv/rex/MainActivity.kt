@@ -42,9 +42,6 @@ import xyz.mpv.rex.preferences.AppearancePreferences
 import xyz.mpv.rex.preferences.preference.collectAsState
 import xyz.mpv.rex.presentation.Screen
 import xyz.mpv.rex.repository.NetworkRepository
-import xyz.mpv.rex.utils.update.UpdateDialog
-import xyz.mpv.rex.utils.update.UpdateManager
-import xyz.mpv.rex.utils.update.UpdateViewModel
 import xyz.mpv.rex.ui.browser.MainScreen
 import xyz.mpv.rex.ui.theme.DarkMode
 import xyz.mpv.rex.ui.theme.MpvexTheme
@@ -71,7 +68,6 @@ import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
 import androidx.compose.runtime.staticCompositionLocalOf
 
-val LocalUpdateViewModel = staticCompositionLocalOf<UpdateViewModel?> { null }
 
 /**
  * Main entry point for the application
@@ -196,13 +192,6 @@ class MainActivity : ComponentActivity() {
 
     val currentVersion = BuildConfig.VERSION_NAME.replace("-dev", "")
 
-    // Conditionally initialize update feature based on build config
-    val updateViewModel: UpdateViewModel? = if (BuildConfig.ENABLE_UPDATE_FEATURE) {
-      viewModel(context as ComponentActivity)
-    } else {
-      null
-    }
-    val updateState by (updateViewModel?.updateState ?: MutableStateFlow(UpdateViewModel.UpdateState.Idle)).collectAsState()
     val miniPlayerState by miniPlayerStateManager.state.collectAsState()
     val hideNavigationBar by MainScreen.shouldHideNavigationBar.collectAsState()
     val currentRoute = typedBackstack.lastOrNull()
@@ -239,7 +228,6 @@ class MainActivity : ComponentActivity() {
     // Provide shared states to all screens
     CompositionLocalProvider(
       LocalBackStack provides typedBackstack,
-      LocalUpdateViewModel provides updateViewModel,
       LocalNavigationBarHeight provides totalNavigationBarHeight
     ) {
       Box(modifier = Modifier.fillMaxSize()) {
@@ -293,32 +281,6 @@ class MainActivity : ComponentActivity() {
         )
       }
 
-      // Display Update Dialog when appropriate (only if update feature is enabled)
-      if (BuildConfig.ENABLE_UPDATE_FEATURE && updateViewModel != null) {
-        when (updateState) {
-          is UpdateViewModel.UpdateState.Available -> {
-            val release = (updateState as UpdateViewModel.UpdateState.Available).release
-            UpdateDialog(
-              release = release,
-              actionLabel = "Download",
-              currentVersion = currentVersion,
-              onDismiss = { updateViewModel.dismiss() },
-              onAction = {
-                // Hand off to the releases page; the app never downloads or
-                // installs APKs itself. Every build tracks the same release feed.
-                context.startActivity(
-                  Intent(
-                    Intent.ACTION_VIEW,
-                    (release.htmlUrl ?: "https://github.com/mpvRex/REX-Player/releases/latest").toUri()
-                  )
-                )
-              },
-              onIgnore = { updateViewModel.ignoreVersion(release.tagName.removePrefix("v")) }
-            )
-          }
-          else -> {}
-        }
-      }
     }
   }
 }

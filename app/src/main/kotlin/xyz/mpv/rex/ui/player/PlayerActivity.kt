@@ -1221,6 +1221,9 @@ class PlayerActivity :
             },
             modifier = Modifier,
           )
+          // Last on purpose: the controls' full-screen gesture layer was drawn over the chip, so
+          // taps on "Skip intro" reached the gesture handler instead of the button.
+          SkipSegmentOverlay(viewModel = viewModel)
         }
       }
     }

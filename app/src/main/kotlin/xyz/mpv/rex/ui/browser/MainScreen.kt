@@ -14,7 +14,12 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -81,6 +86,10 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
+import xyz.mpv.rex.presentation.components.LiquidGlassSurface
+import xyz.mpv.rex.presentation.components.LiquidGlassStyle
+import xyz.mpv.rex.presentation.components.captureLiquidGlassBackdrop
+import xyz.mpv.rex.presentation.components.rememberLiquidGlassBackdrop
 
 @Serializable
 object MainScreen : Screen {
@@ -356,6 +365,9 @@ object MainScreen : Screen {
       }
     }
 
+    // Glass navigation: the bar samples the content drawn behind it.
+    val navigationGlassBackdrop = rememberLiquidGlassBackdrop()
+
     // Scaffold with bottom navigation bar
     Scaffold(
       modifier = Modifier.fillMaxSize(),
@@ -377,9 +389,36 @@ object MainScreen : Screen {
             )
           ) {
             val navBarBottomInset = NavigationBarDefaults.windowInsets.asPaddingValues().calculateBottomPadding()
+            val floatingBarShape = RoundedCornerShape(28.dp)
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = if (navBarBottomInset > 8.dp) navBarBottomInset - 8.dp else 8.dp)
+                .clip(floatingBarShape),
+            ) {
+              if (appearancePreferences.liquidGlassEnabled.collectAsState().value) {
+                LiquidGlassSurface(
+                  shape = floatingBarShape,
+                  style = LiquidGlassStyle.Navigation,
+                  glassColor = MaterialTheme.colorScheme.surfaceContainer,
+                  fallbackColor = MaterialTheme.colorScheme.surfaceContainer,
+                  backdrop = navigationGlassBackdrop,
+                  modifier = Modifier.matchParentSize(),
+                ) {}
+              } else {
+                // Without this the floating pill had no container at all when glass is off, so the
+                // icons sat bare over the video grid.
+                Box(
+                  modifier = Modifier
+                    .matchParentSize()
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
+                )
+              }
             NavigationBar(
-              modifier = Modifier.height(64.dp + navBarBottomInset),
-              containerColor = if (isShortsTabActive) Color.Transparent else MaterialTheme.colorScheme.surfaceContainer,
+              modifier = Modifier.fillMaxWidth().height(72.dp),
+              windowInsets = WindowInsets(0, 0, 0, 0),
+              containerColor = Color.Transparent,
               contentColor = if (isShortsTabActive) Color.White else MaterialTheme.colorScheme.onSurface,
             ) {
               val itemColors = if (isShortsTabActive) {
@@ -437,10 +476,17 @@ object MainScreen : Screen {
                 )
               }
             }
+            }
           }
         }
     ) { _ ->
-      Box(modifier = Modifier.fillMaxSize()) {
+      // The screen content is recorded into the glass layer the navigation bar samples; without the
+      // recording the bar refracts an empty layer and looks like a plain translucent strip.
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+          .captureLiquidGlassBackdrop(navigationGlassBackdrop),
+      ) {
         val fabBottomPadding = 64.dp
 
         AnimatedContent(
@@ -505,7 +551,7 @@ object MainScreen : Screen {
           val isShortsTabActive = isShortsEnabled && shortsIdx != -1 && selectedTab == shortsIdx
           val isNavBarVisible = !hideNavigationBar && !isShortsTabActive && visibleTabs.size > 1
           
-          val navBarHeight = if (isNavBarVisible) 64.dp else 0.dp
+          val navBarHeight = if (isNavBarVisible) 88.dp else 0.dp
           val miniPlayerHeight = if (miniPlayerState.isPlaybackActive) MiniPlayerDefaults.CompactHeight else 0.dp
           val totalBottomPadding = navBarHeight + miniPlayerHeight
           

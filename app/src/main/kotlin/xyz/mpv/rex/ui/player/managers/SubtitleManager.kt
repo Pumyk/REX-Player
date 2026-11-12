@@ -1,12 +1,15 @@
 package xyz.mpv.rex.ui.player.managers
 
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import xyz.mpv.rex.R
+import org.koin.core.context.GlobalContext
 import xyz.mpv.rex.repository.wyzie.WyzieErrorKind
 import xyz.mpv.rex.repository.wyzie.WyzieException
+import xyz.mpv.rex.repository.ai.AiService
 import xyz.mpv.rex.repository.subtitle.SubtitleSearchService
 import xyz.mpv.rex.repository.wyzie.WyzieSearchRepository
 import xyz.mpv.rex.repository.wyzie.WyzieSubtitle
@@ -26,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import xyz.mpv.rex.preferences.AiPreferences
 import xyz.mpv.rex.preferences.SubtitlesPreferences
 import xyz.mpv.rex.utils.media.SubtitleEncodingUtils
 import java.io.File
@@ -333,14 +337,37 @@ class SubtitleManager(
         searchSubtitles(tvShowName, episode.season_number, episode.episode_number)
     }
 
+    // Resolved lazily so the manager keeps its existing constructor and tests.
+    private val aiService: AiService by lazy { GlobalContext.get().get() }
+    private val aiPreferences: AiPreferences by lazy { GlobalContext.get().get() }
+
+    /**
+     * Cleans a raw filename into the title the sources expect. Falls back to the caller's text on any
+     * miss, so a missing key or a slow model never blocks a search.
+     */
+    private suspend fun searchTitle(query: String): String {
+        if (query.length < 4) return query
+        val usable =
+            runCatching {
+                aiPreferences.enabled.get() && aiPreferences.subtitleFormatWithAi.get() &&
+                    aiService.getApiKey(aiPreferences.provider.get()).isNotBlank()
+            }.getOrDefault(false)
+        if (!usable) return query
+        return runCatching {
+                kotlinx.coroutines.withTimeout(6_000) { aiService.formatTitleForSubtitleSearch(query) }
+                    .getOrNull()
+            }.getOrNull()?.takeIf { it.isNotBlank() } ?: query
+    }
+
     fun searchSubtitles(query: String, season: Int? = null, episode: Int? = null, year: String? = null) {
         searchSubtitlesJob?.cancel()
         searchSubtitlesJob = scope.launch {
             _isSearchingSub.value = true
             clearSearchError()
+            val effectiveQuery = searchTitle(query)
             try {
                 subtitleSearchService
-                    .searchIncremental(query, season, episode, year) { partial ->
+                    .searchIncremental(effectiveQuery, season, episode, year) { partial ->
                         // Show results as each source answers instead of waiting for all.
                         if (partial.isNotEmpty()) {
                             _wyzieSearchResults.value = partial

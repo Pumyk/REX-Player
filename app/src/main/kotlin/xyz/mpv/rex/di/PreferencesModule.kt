@@ -4,6 +4,7 @@ import xyz.mpv.rex.database.MpvExDatabase
 import xyz.mpv.rex.domain.pinned.PinnedItemRepository
 import xyz.mpv.rex.domain.pinned.PinnedItemRepositoryImpl
 import xyz.mpv.rex.preferences.AdvancedPreferences
+import xyz.mpv.rex.preferences.AiPreferences
 import xyz.mpv.rex.preferences.AppearancePreferences
 import xyz.mpv.rex.preferences.AudioPreferences
 import xyz.mpv.rex.preferences.BrowserPreferences
@@ -43,4 +44,5 @@ val PreferencesModule =
     singleOf(::UiPreferences)
     singleOf(::PlayerTutorialManager)
     singleOf(::YtdlPreferences)
+    singleOf(::AiPreferences)
   }

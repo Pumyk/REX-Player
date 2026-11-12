@@ -17,9 +17,32 @@ import xyz.mpv.rex.ui.theme.DarkMode
 import xyz.mpv.rex.ui.theme.spacing
 import kotlinx.collections.immutable.ImmutableList
 
+enum class LiquidGlassHighlightStyle { Component, Default, Ambient, Plain }
+
 class AppearancePreferences(
   preferenceStore: PreferenceStore,
 ) {
+  val liquidGlassEnabled = preferenceStore.getBoolean("liquid_glass_enabled", false)
+  val liquidGlassInHdr = preferenceStore.getBoolean("liquid_glass_in_hdr", false)
+  val liquidGlassOpacity = preferenceStore.getFloat("liquid_glass_opacity", 1f)
+  val liquidGlassBlur = preferenceStore.getFloat("liquid_glass_blur", 1f)
+  val liquidGlassRefractionHeight = preferenceStore.getFloat("liquid_glass_refraction_height", 1f)
+  val liquidGlassRefractionAmount = preferenceStore.getFloat("liquid_glass_refraction_amount", 1f)
+  val liquidGlassDepthEffect = preferenceStore.getBoolean("liquid_glass_depth_effect", false)
+  val liquidGlassChromaticAberration = preferenceStore.getBoolean("liquid_glass_chromatic_aberration", true)
+  val liquidGlassVibrancy = preferenceStore.getBoolean("liquid_glass_vibrancy", true)
+  val liquidGlassSaturation = preferenceStore.getFloat("liquid_glass_saturation", 1f)
+  val liquidGlassBrightness = preferenceStore.getFloat("liquid_glass_brightness", 0f)
+  val liquidGlassContrast = preferenceStore.getFloat("liquid_glass_contrast", 1f)
+  val liquidGlassHighlightStrength = preferenceStore.getFloat("liquid_glass_highlight_strength", 1f)
+  val liquidGlassHighlightWidth = preferenceStore.getFloat("liquid_glass_highlight_width", 1f)
+  val liquidGlassHighlightBlur = preferenceStore.getFloat("liquid_glass_highlight_blur", 1f)
+  val navigationBarGlow = preferenceStore.getBoolean("navigation_bar_glow", true)
+  val connectedMiniPlayerNavigation = preferenceStore.getBoolean("connected_mini_player_navigation", true)
+  val legacyNavigationBar = preferenceStore.getBoolean("legacy_navigation_bar", false)
+  val liquidGlassHighlightStyle =
+    preferenceStore.getEnum("liquid_glass_highlight_style", LiquidGlassHighlightStyle.Component)
+
   val darkMode = preferenceStore.getEnum("dark_mode", DarkMode.System)
   val appTheme = preferenceStore.getEnum("app_theme", AppTheme.Default)
   val appLanguage = preferenceStore.getString("app_language", "")

@@ -1,5 +1,7 @@
 package xyz.mpv.rex.utils.media
 
+import android.content.Context
+
 /**
  * High-accuracy media filename parser inspired by kahari-parser (GizmoH2o/kahari-parser).
  *
@@ -28,7 +30,11 @@ data class ParsedMediaInfo(
     val season: Int? = null,
     val episode: Int? = null,
     val episodeTitle: String? = null,
-    val type: String // "movie" or "tv"
+    val type: String, // "movie" or "tv"
+    /** Last episode of a multi-episode file ("S01E01-E02"); community lookups skip these. */
+    val episodeEnd: Int? = null,
+    /** True when the name could be several episodes and REX will not guess which one. */
+    val isEpisodeAmbiguous: Boolean = false,
 )
 
 object MediaInfoParser {
@@ -176,6 +182,15 @@ object MediaInfoParser {
     private val COMPOUND_AUDIO_REGEX = Regex("""\b(?:DTS[-.]?HD(?:[-.]?MA)?|TrueHD|DD\+?|DDP)\b""", RegexOption.IGNORE_CASE)
 
     // ── Main parse function ──────────────────────────────────────────────────────
+
+    /**
+     * Lookup-shaped parse used by the community timestamp databases. REX infers everything it
+     * needs from the name itself, so this simply defers to [parse]; the context parameter is
+     * part of the ported signature and deliberately unused.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    suspend fun parseForLookup(context: android.content.Context, fileName: String): ParsedMediaInfo =
+      parse(fileName)
 
     fun parse(fileName: String): ParsedMediaInfo {
         if (fileName.isBlank()) {

@@ -72,8 +72,6 @@ import xyz.mpv.rex.preferences.preference.collectAsState
 import xyz.mpv.rex.ui.utils.TelegramIcon
 import xyz.mpv.rex.ui.utils.CommunityIcon
 import xyz.mpv.rex.MainActivity
-import xyz.mpv.rex.LocalUpdateViewModel
-import xyz.mpv.rex.utils.update.UpdateViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.CircularProgressIndicator
@@ -87,28 +85,12 @@ object AboutScreen : Screen {
     val context = LocalContext.current
     val backstack = LocalBackStack.current
     val clipboardManager = LocalClipboardManager.current
-    val updateViewModel = LocalUpdateViewModel.current
-    val updateState by (updateViewModel?.updateState ?: MutableStateFlow(UpdateViewModel.UpdateState.Idle)).collectAsState()
     val preferences = koinInject<AppearancePreferences>()
     
     val packageManager: PackageManager = context.packageManager
     val packageInfo = packageManager.getPackageInfo(context.packageName, 0)
     val versionName = packageInfo.versionName?.substringBefore('-') ?: packageInfo.versionName
     val buildType = BuildConfig.BUILD_TYPE
-
-    LaunchedEffect(updateState) {
-        when (updateState) {
-            is UpdateViewModel.UpdateState.NoUpdate -> {
-                Toast.makeText(context, context.getString(R.string.pref_about_up_to_date), Toast.LENGTH_SHORT).show()
-                updateViewModel?.dismissNoUpdate()
-            }
-            is UpdateViewModel.UpdateState.Error -> {
-                Toast.makeText(context, context.getString(R.string.pref_about_check_updates_failed), Toast.LENGTH_SHORT).show()
-                updateViewModel?.dismissNoUpdate()
-            }
-            else -> {}
-        }
-    }
 
     Scaffold(
       topBar = {
@@ -136,7 +118,6 @@ object AboutScreen : Screen {
       val cs = MaterialTheme.colorScheme
       val colorPrimary = cs.primaryContainer
       val colorSecondary = cs.secondaryContainer
-      val isAutoUpdateEnabled by (updateViewModel?.isAutoUpdateEnabled ?: MutableStateFlow(false)).collectAsState()
       val transition = rememberInfiniteTransition()
       val fraction by transition.animateFloat(
         initialValue = 0f,
@@ -372,58 +353,6 @@ object AboutScreen : Screen {
 
           Spacer(Modifier.height(8.dp))
 
-          // Updates Section
-          if (BuildConfig.ENABLE_UPDATE_FEATURE) {
-            PreferenceSectionHeader(title = stringResource(R.string.pref_category_updates))
-            GroupedListColumn {
-              GroupedPreferenceCard(position = GroupPosition.FIRST) {
-                SwitchPreference(
-                  value = isAutoUpdateEnabled,
-                  onValueChange = { updateViewModel?.toggleAutoUpdate(it) },
-                  title = { Text(stringResource(R.string.pref_about_auto_check_updates)) },
-                  summary = {
-                    Text(
-                      stringResource(R.string.pref_about_auto_check_updates_summary),
-                      color = MaterialTheme.colorScheme.outline,
-                    )
-                  },
-                  icon = {
-                    Icon(
-                      imageVector = Icons.Default.SystemUpdate,
-                      contentDescription = null,
-                      tint = MaterialTheme.colorScheme.primary
-                    )
-                  }
-                )
-              }
-              
-              GroupedPreferenceCard(position = GroupPosition.LAST) {
-                Preference(
-                  title = { Text(stringResource(R.string.pref_about_check_updates)) },
-                  summary = {
-                    if (updateState is UpdateViewModel.UpdateState.Loading) {
-                      Text(stringResource(R.string.pref_about_checking), color = MaterialTheme.colorScheme.primary)
-                    } else {
-                      Text(stringResource(R.string.pref_about_check_updates_summary), color = MaterialTheme.colorScheme.outline)
-                    }
-                  },
-                  icon = {
-                    if (updateState is UpdateViewModel.UpdateState.Loading) {
-                       CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                    } else {
-                       Icon(
-                         imageVector = Icons.Default.SystemUpdate,
-                         contentDescription = null,
-                         tint = MaterialTheme.colorScheme.primary
-                       )
-                    }
-                  },
-                  onClick = { updateViewModel?.checkForUpdate(manual = true) },
-                  enabled = updateState !is UpdateViewModel.UpdateState.Loading
-                )
-              }
-            }
-          }
           Spacer(Modifier.height(xyz.mpv.rex.ui.browser.LocalNavigationBarHeight.current + 16.dp))
         }
       }

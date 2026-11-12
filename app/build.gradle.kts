@@ -17,8 +17,8 @@ android {
     applicationId = "xyz.mpv.rex"
     minSdk = 26
     targetSdk = 36
-    versionCode = 217
-    versionName = "5.5.1"
+    versionCode = 100
+    versionName = "1.0"
 
     vectorDrawables {
       useSupportLibrary = true
@@ -27,7 +27,7 @@ android {
     buildConfigField("String", "GIT_SHA", "\"${getCommitSha()}\"")
     buildConfigField("int", "GIT_COUNT", getCommitCount())
     // Enable update feature by default
-    buildConfigField("boolean", "ENABLE_UPDATE_FEATURE", "true")
+    buildConfigField("boolean", "ENABLE_UPDATE_FEATURE", "false")
     buildConfigField("boolean", "SCOPED_STORAGE_ONLY", "false")
     buildConfigField("boolean", "IS_PREVIEW", "false")
     // This fork is sideload-only, so the ported mpvRx subtitle sources are all available.
@@ -61,6 +61,8 @@ android {
 
   buildTypes {
     named("release") {
+      // Sits alongside the Play Store REX-Player instead of replacing it.
+      applicationIdSuffix = ".rel"
       if (project.hasProperty("releaseKeyStore")) {
         signingConfig = signingConfigs.getByName("release")
       }
@@ -167,6 +169,9 @@ room {
 }
 
 dependencies {
+  implementation(libs.kyant.backdrop)
+  implementation(libs.haze.blur)
+  implementation(libs.kyant.shapes)
   implementation(libs.splashScreen)
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))
@@ -241,3 +246,12 @@ fun getCommitSha(): String =
   providers.exec {
     commandLine("git", "rev-parse", "--short", "HEAD")
   }.standardOutput.asText.get().trim().ifEmpty { "unknown" }
+
+// The liquid-glass libraries (haze / backdrop / shapes) declare a compileSdk of 37, which this
+// toolchain does not ship yet. The dependency metadata check is skipped so the optimised build can
+// run on 36; glass stays behind its own off-by-default setting.
+tasks.configureEach {
+  if (name.startsWith("check") && name.endsWith("AarMetadata")) {
+    enabled = false
+  }
+}

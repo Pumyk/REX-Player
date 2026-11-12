@@ -1,5 +1,12 @@
 package xyz.mpv.rex.ui.player
 
+import kotlinx.coroutines.delay
+import org.koin.core.context.GlobalContext
+import xyz.mpv.rex.preferences.IntroSegmentProvider
+import xyz.mpv.rex.repository.IntroDbLookupOutcome
+import xyz.mpv.rex.repository.IntroDbLookupRequest
+import xyz.mpv.rex.repository.IntroDbRepository
+
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.media.AudioManager
@@ -82,6 +89,8 @@ enum class RepeatMode {
   ONE,      // Repeat current file
   ALL       // Repeat all (playlist)
 }
+
+private const val SKIP_TICK_MS = 500L
 
 class PlayerViewModelProviderFactory(
   private val host: PlayerHost,
@@ -345,6 +354,233 @@ class PlayerViewModel(
   val chapters: StateFlow<List<dev.vivvvek.seeker.Segment>> =
     observeChapters(json)
       .stateIn(viewModelScope, SharingStarted.Lazily, persistentListOf())
+
+  // ── Community skip markers (ported from mpvRx) ───────────────────────────────
+  // Intro / recap / outro / credits timestamps from the public timestamp databases
+  // plus chapter-title detection. Everything here is best effort: a failed or slow
+  // lookup leaves playback completely untouched.
+
+  private val skipPreferences: PlayerPreferences by lazy { GlobalContext.get().get() }
+  private val introDbRepository: IntroDbRepository by lazy { GlobalContext.get().get() }
+
+  private val _skipSegments = MutableStateFlow<List<SkipSegment>>(emptyList())
+  val skipSegments: StateFlow<List<SkipSegment>> = _skipSegments.asStateFlow()
+
+  private val _currentSkippableSegment = MutableStateFlow<SkipSegment?>(null)
+  val currentSkippableSegment: StateFlow<SkipSegment?> = _currentSkippableSegment.asStateFlow()
+
+  private val skippedSegments = mutableSetOf<SkipSegment>()
+  private var chapterDerivedSegments: List<SkipSegment> = emptyList()
+  private var introDbSegments: List<xyz.mpv.rex.repository.IntroDbSegment> = emptyList()
+  private var introLookupJob: Job? = null
+  private var lastSkipLookupTitle: String? = null
+  private var lastLookupDuration = 0.0
+
+  private var lastChapters: List<dev.vivvvek.seeker.Segment> = emptyList()
+
+  private fun flatMapLatestChapters() {
+    viewModelScope.launch {
+      chapters.collect { chapterList ->
+        lastChapters = chapterList
+        refreshChapterDerivedSegments(chapterList)
+        mergeSkipSegments()
+        lookupIntroSegments(_mediaTitle.value)
+      }
+    }
+    // A stream can start before its title resolves; look the markers up as soon as it does.
+    viewModelScope.launch {
+      _mediaTitle.collect { title ->
+        if (title.isNotBlank()) {
+          lookupIntroSegments(title)
+          refreshChapterDerivedSegments(lastChapters)
+          mergeSkipSegments()
+        }
+      }
+    }
+    // Chapters usually arrive before mpv knows the duration; nothing can be classified until the
+    // runtime is known, so every late duration re-runs the detection instead of giving up.
+    viewModelScope.launch {
+      _preciseDuration.collect { duration ->
+        if (duration > 0f) {
+          refreshChapterDerivedSegments(lastChapters)
+          mergeSkipSegments()
+          lookupIntroSegments(_mediaTitle.value)
+        }
+      }
+    }
+    viewModelScope.launch {
+      while (true) {
+        delay(SKIP_TICK_MS)
+        val position = runCatching { MPVLib.getPropertyDouble("time-pos") }.getOrNull() ?: continue
+        maybeAutoSkip(position)
+      }
+    }
+  }
+
+  private fun skipDurationSeconds(): Double =
+    (_preciseDuration.value.takeIf { it > 0f } ?: (duration ?: 0).toFloat()).toDouble()
+
+  private fun refreshChapterDerivedSegments(chapterList: List<dev.vivvvek.seeker.Segment>) {
+    if (!skipPreferences.detectIntroOutroFromChapters.get()) {
+      if (chapterDerivedSegments.isNotEmpty()) {
+        chapterDerivedSegments = emptyList()
+        mergeSkipSegments()
+      }
+      return
+    }
+    val durationSeconds = skipDurationSeconds()
+    if (durationSeconds <= 0.0) return
+    chapterDerivedSegments =
+      SkipMarkerResolver.resolveChapters(
+        chapters = chapterList.map { ChapterSkipMarker(it.name, it.start.toDouble()) },
+        durationSeconds = durationSeconds,
+        classify = { title ->
+          SkipMarkerResolver.classifyTitle(
+            title = title,
+            introKeywords = INTRO_KEYWORD_PATTERNS,
+            outroKeywords = OUTRO_KEYWORD_PATTERNS,
+            recapKeywords = RECAP_KEYWORD_PATTERNS,
+            creditsKeywords = CREDITS_KEYWORD_PATTERNS,
+            previewKeywords = PREVIEW_KEYWORD_PATTERNS,
+          )
+        },
+      )
+  }
+
+  private fun lookupIntroSegments(mediaTitle: String) {
+    val durationNow = skipDurationSeconds()
+    // A lookup made before the runtime was known cannot validate its segments; redo it once the
+    // duration arrives, otherwise titles whose databases only answer with a runtime stay empty.
+    if (mediaTitle.isBlank() ||
+      (mediaTitle == lastSkipLookupTitle && (durationNow <= 0.0 || durationNow == lastLookupDuration))
+    ) {
+      return
+    }
+    lastSkipLookupTitle = mediaTitle
+    lastLookupDuration = durationNow
+    introLookupJob?.cancel()
+    introDbSegments = emptyList()
+    _currentSkippableSegment.value = null
+    mergeSkipSegments()
+    if (!skipPreferences.enableIntroDb.get()) return
+
+    val parsed = runCatching { MediaInfoParser.parse(mediaTitle) }.getOrNull()
+    val provider = runCatching { skipPreferences.introSegmentProvider.get() }
+      .getOrDefault(IntroSegmentProvider.HYBRID)
+    introLookupJob =
+      viewModelScope.launch {
+        val outcome =
+          runCatching {
+            introDbRepository.lookupSegments(
+              IntroDbLookupRequest(
+                mediaTitle = mediaTitle,
+                mediaType = parsed?.type,
+                season = parsed?.season,
+                episode = parsed?.episode,
+                durationSeconds = skipDurationSeconds().takeIf { it > 0.0 },
+                provider = provider,
+              ),
+            )
+          }.getOrNull()
+        if (outcome is IntroDbLookupOutcome.Loaded) {
+          introDbSegments = outcome.segments
+          mergeSkipSegments()
+        }
+      }
+  }
+
+  private fun mergeSkipSegments() {
+    val durationSeconds = skipDurationSeconds()
+    val providerSegments =
+      SkipMarkerResolver.resolveProviderSegments(
+        markers =
+          introDbSegments.map { segment ->
+            ProviderSkipMarker(
+              type = segment.segmentType,
+              startSeconds = segment.startSecondsOrNull,
+              endSeconds = segment.endSecondsOrNull,
+            )
+          },
+        durationSeconds = durationSeconds,
+        source = "introdb",
+      )
+    val endingTypes = setOf(SkipSegmentType.OUTRO, SkipSegmentType.CREDITS)
+    val chapterFallbacks =
+      chapterDerivedSegments.filter { chapter ->
+        providerSegments.none { provider ->
+          provider.type == chapter.type ||
+            (provider.type in endingTypes && chapter.type in endingTypes) ||
+            (provider.startSeconds < chapter.endSeconds && chapter.startSeconds < provider.endSeconds)
+        }
+      }
+    _skipSegments.value = SkipMarkerResolver.merge(providerSegments + chapterFallbacks)
+  }
+
+  private fun maybeAutoSkip(positionSeconds: Double) {
+    val active =
+      _skipSegments.value.firstOrNull { segment ->
+        positionSeconds >= segment.startSeconds &&
+          positionSeconds < segment.endSeconds &&
+          segment !in skippedSegments
+      }
+    val autoSkip =
+      when (active?.type) {
+        SkipSegmentType.INTRO, SkipSegmentType.RECAP -> skipPreferences.autoSkipIntro.get()
+        SkipSegmentType.OUTRO, SkipSegmentType.CREDITS, SkipSegmentType.PREVIEW -> skipPreferences.autoSkipOutro.get()
+        null -> false
+      }
+    val manual = active?.takeUnless { autoSkip }
+    if (_currentSkippableSegment.value != manual) _currentSkippableSegment.value = manual
+    if (positionSeconds > 0 && active != null && autoSkip) {
+      skippedSegments += active
+      _currentSkippableSegment.value = null
+      seekPastSkipSegment(active)
+    }
+  }
+
+  /** Called when the viewer taps the skip chip. */
+  fun skipActiveSegment() {
+    val segment = _currentSkippableSegment.value ?: activeSegmentNow() ?: return
+    skippedSegments += segment
+    _currentSkippableSegment.value = null
+    seekPastSkipSegment(segment)
+    // The tick loop would clear it within half a second anyway; do it now so the chip disappears
+    // the moment it is tapped.
+    maybeAutoSkip(currentPositionSeconds())
+  }
+
+  /** The segment under the playhead right now, independent of the last tick. */
+  private fun activeSegmentNow(): SkipSegment? {
+    val position = currentPositionSeconds()
+    if (position <= 0.0) return null
+    return _skipSegments.value.firstOrNull { segment ->
+      position >= segment.startSeconds && position < segment.endSeconds && segment !in skippedSegments
+    }
+  }
+
+  private fun currentPositionSeconds(): Double =
+    runCatching { MPVLib.getPropertyDouble("time-pos") }.getOrNull() ?: 0.0
+
+  private fun seekPastSkipSegment(segment: SkipSegment) {
+    val target = SkipMarkerResolver.seekTarget(segment, skipDurationSeconds()).coerceAtLeast(0.0)
+    val sought =
+      runCatching { MPVLib.command("seek", target.toString(), "absolute+exact") }.isSuccess
+    if (!sought) {
+      runCatching { MPVLib.setPropertyDouble("time-pos", target) }
+    }
+    Log.d("PlayerViewModel", "skip ${segment.type}: seek to $target")
+  }
+
+  private fun resetSkipState() {
+    introLookupJob?.cancel()
+    skippedSegments.clear()
+    introDbSegments = emptyList()
+    chapterDerivedSegments = emptyList()
+    lastSkipLookupTitle = null
+    lastLookupDuration = 0.0
+    _skipSegments.value = emptyList()
+    _currentSkippableSegment.value = null
+  }
 
   /**
    * Pins a bookmark at [positionMs] (defaults to the live position) for the current media.
@@ -997,6 +1233,8 @@ class PlayerViewModel(
     if (currentMediaTitle != mediaTitle) {
       currentMediaTitle = mediaTitle
       lastAutoSelectedMediaTitle = null
+      resetSkipState()
+      lookupIntroSegments(mediaTitle)
       // Clear external subtitles when media changes
       _subtitleManager.clearExternalSubtitles()
       // Scan for previously downloaded/added subtitles
@@ -2312,6 +2550,11 @@ class PlayerViewModel(
     ambientController.cleanup()
     videoFlipFilterManager.reset()
   }
+  init {
+    // Started last on purpose: the collectors read state declared further up the class body, so
+    // launching them from an earlier init block hit null fields while playing a video.
+    flatMapLatestChapters()
+  }
 }
 
 // Extension functions
@@ -2336,6 +2579,7 @@ fun <T> Flow<T>.collectAsState(
     thisRef: Any?,
     property: KProperty<*>,
   ) = value
+
 }
 
 /** Merged chapter/bookmark timeline plus the stop the UI should currently highlight. */

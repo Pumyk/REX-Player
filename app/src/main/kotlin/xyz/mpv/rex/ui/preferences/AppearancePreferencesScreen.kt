@@ -16,6 +16,9 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Slider
+import androidx.compose.foundation.layout.Arrangement
+import kotlin.math.roundToInt
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -233,6 +236,76 @@ object AppearancePreferencesScreen : Screen {
                                     title = { Text(text = stringResource(id = R.string.pref_appearance_hide_play_fab_show_in_header_title)) },
                                     summary = { Text(text = stringResource(id = R.string.pref_appearance_hide_play_fab_show_in_header_summary)) },
                                 )
+                            }
+                        }
+                    }
+
+                    item {
+                        PreferenceSectionHeader(title = stringResource(id = R.string.pref_appearance_liquid_glass))
+                    }
+
+                    item {
+                        val glassEnabled by preferences.liquidGlassEnabled.collectAsState()
+                        val glassHdr by preferences.liquidGlassInHdr.collectAsState()
+                        val glassVibrancy by preferences.liquidGlassVibrancy.collectAsState()
+                        val glassChroma by preferences.liquidGlassChromaticAberration.collectAsState()
+                        val glassOpacity by preferences.liquidGlassOpacity.collectAsState()
+                        val glassBlur by preferences.liquidGlassBlur.collectAsState()
+
+                        GroupedListColumn {
+                            GroupedPreferenceCard(position = GroupPosition.FIRST) {
+                                SwitchPreference(
+                                    value = glassEnabled,
+                                    onValueChange = { preferences.liquidGlassEnabled.set(it) },
+                                    title = { Text(text = stringResource(id = R.string.pref_appearance_liquid_glass_title)) },
+                                    summary = {
+                                        Text(
+                                            text = stringResource(id = R.string.pref_appearance_liquid_glass_summary),
+                                            color = MaterialTheme.colorScheme.outline,
+                                        )
+                                    },
+                                )
+                            }
+
+                            if (glassEnabled) {
+                                GroupedPreferenceCard(position = GroupPosition.MIDDLE) {
+                                    SwitchPreference(
+                                        value = glassVibrancy,
+                                        onValueChange = { preferences.liquidGlassVibrancy.set(it) },
+                                        title = { Text(text = stringResource(id = R.string.pref_appearance_glass_vibrancy)) },
+                                        summary = { Text(text = stringResource(id = R.string.pref_appearance_glass_vibrancy_summary), color = MaterialTheme.colorScheme.outline) },
+                                    )
+                                }
+                                GroupedPreferenceCard(position = GroupPosition.MIDDLE) {
+                                    SwitchPreference(
+                                        value = glassChroma,
+                                        onValueChange = { preferences.liquidGlassChromaticAberration.set(it) },
+                                        title = { Text(text = stringResource(id = R.string.pref_appearance_glass_chroma)) },
+                                        summary = { Text(text = stringResource(id = R.string.pref_appearance_glass_chroma_summary), color = MaterialTheme.colorScheme.outline) },
+                                    )
+                                }
+                                GroupedPreferenceCard(position = GroupPosition.MIDDLE) {
+                                    SwitchPreference(
+                                        value = glassHdr,
+                                        onValueChange = { preferences.liquidGlassInHdr.set(it) },
+                                        title = { Text(text = stringResource(id = R.string.pref_appearance_glass_hdr)) },
+                                        summary = { Text(text = stringResource(id = R.string.pref_appearance_glass_hdr_summary), color = MaterialTheme.colorScheme.outline) },
+                                    )
+                                }
+                                GroupedPreferenceCard(position = GroupPosition.MIDDLE) {
+                                    GlassFractionRow(
+                                        label = stringResource(id = R.string.pref_appearance_glass_opacity),
+                                        value = glassOpacity,
+                                        onChange = { preferences.liquidGlassOpacity.set(it) },
+                                    )
+                                }
+                                GroupedPreferenceCard(position = GroupPosition.LAST) {
+                                    GlassFractionRow(
+                                        label = stringResource(id = R.string.pref_appearance_glass_blur),
+                                        value = glassBlur,
+                                        onChange = { preferences.liquidGlassBlur.set(it) },
+                                    )
+                                }
                             }
                         }
                     }
@@ -495,3 +568,25 @@ private data class BottomNavTabItem(
     val enabled: Boolean,
     val onValueChange: (Boolean) -> Unit,
 )
+@Composable
+private fun GlassFractionRow(
+  label: String,
+  value: Float,
+  onChange: (Float) -> Unit,
+) {
+  Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text(text = label, style = MaterialTheme.typography.bodyLarge)
+      Text(
+        text = "${(value * 100).roundToInt()}%",
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.outline,
+      )
+    }
+    Slider(value = value, onValueChange = onChange, valueRange = 0f..1f)
+  }
+}

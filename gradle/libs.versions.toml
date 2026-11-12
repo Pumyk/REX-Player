@@ -25,6 +25,9 @@ kotlinx-coroutines-test = "1.10.1"
 turbine = "1.2.0"
 
 [libraries]
+haze-blur = { module = "dev.chrisbanes.haze:haze-blur", version = "2.0.1" }
+kyant-backdrop = { module = "io.github.kyant0:backdrop-android", version = "2.0.1" }
+kyant-shapes = { module = "io.github.kyant0:shapes-android", version = "1.2.1" }
 junit = { module = "junit:junit", version.ref = "junit" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }

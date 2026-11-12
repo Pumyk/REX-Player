@@ -2,6 +2,7 @@ package xyz.mpv.rex.ui.browser.dialogs
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,11 +16,14 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import xyz.mpv.rex.preferences.preference.collectAsState
 import androidx.compose.ui.res.stringResource
 import xyz.mpv.rex.R
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -28,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -132,6 +137,55 @@ fun RenameDialog(
               ),
             shape = MaterialTheme.shapes.extraLarge,
           )
+
+          val aiPreferences = org.koin.compose.koinInject<xyz.mpv.rex.preferences.AiPreferences>()
+          val aiService = org.koin.compose.koinInject<xyz.mpv.rex.repository.ai.AiService>()
+          val aiOn by aiPreferences.enabled.collectAsState()
+          val renameOn by aiPreferences.renameWithAi.collectAsState()
+          val scope = rememberCoroutineScope()
+          val suggesting = remember { mutableStateOf(false) }
+          val aiError = remember { mutableStateOf<String?>(null) }
+
+          if (aiOn && renameOn) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.End,
+            ) {
+              TextButton(
+                enabled = !suggesting.value,
+                onClick = {
+                  if (suggesting.value) return@TextButton
+                  suggesting.value = true
+                  aiError.value = null
+                  scope.launch {
+                    aiService
+                      .renameWithAi(currentName, null)
+                      .onSuccess { suggestion ->
+                        baseName.value = TextFieldValue(suggestion, TextRange(suggestion.length))
+                        isError.value = false
+                      }
+                      .onFailure { aiError.value = it.message ?: "AI rename failed" }
+                    suggesting.value = false
+                  }
+                },
+                shape = MaterialTheme.shapes.extraLarge,
+              ) {
+                Text(
+                  text = stringResource(
+                    if (suggesting.value) R.string.ai_rename_working else R.string.ai_rename_suggest,
+                  ),
+                  fontWeight = FontWeight.Medium,
+                )
+              }
+            }
+            aiError.value?.let { message ->
+              Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+              )
+            }
+          }
         }
       }
     },

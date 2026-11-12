@@ -16,6 +16,17 @@ import xyz.mpv.rex.ui.player.VideoAspect
 class PlayerPreferences(
   private val preferenceStore: PreferenceStore,
 ) {
+  // Community intro / recap / outro markers (ported from mpvRx).
+  val enableIntroDb = preferenceStore.getBoolean("enable_introdb", true)
+  val introSegmentProvider =
+    preferenceStore.getEnum("intro_segment_provider", IntroSegmentProvider.HYBRID)
+  val detectIntroOutroFromChapters = preferenceStore.getBoolean("detect_intro_outro_from_chapters", true)
+  val autoSkipIntro = preferenceStore.getBoolean("auto_skip_intro", false)
+  val autoSkipOutro = preferenceStore.getBoolean("auto_skip_outro", false)
+  val customIntroKeywordsEnabled = preferenceStore.getBoolean("custom_intro_keywords_enabled", false)
+  val customIntroKeywords = preferenceStore.getString("custom_intro_keywords", "")
+  val customOutroKeywordsEnabled = preferenceStore.getBoolean("custom_outro_keywords_enabled", false)
+  val customOutroKeywords = preferenceStore.getString("custom_outro_keywords", "")
   val orientation = preferenceStore.getEnum("player_orientation", PlayerOrientation.Video)
   val backgroundPlayback = preferenceStore.getEnum("background_playback_mode", BackgroundPlaybackMode.AudioOnly)
   val invertDuration = preferenceStore.getBoolean("invert_duration")
