@@ -12,8 +12,8 @@
   <img src="https://img.shields.io/badge/Platform-Android-brightgreen.svg" />
   <img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" />
   <img src="https://img.shields.io/badge/Kotlin-2.4.10-purple.svg" />
-  <a href="https://github.com/mpvRex/REX-Player/releases"><img src="https://img.shields.io/github/downloads/mpvRex/REX-Player/total?logo=Github"/></a>
-  <img src="https://img.shields.io/github/stars/mpvRex/REX-Player?style=flat&logo=github" />
+  <a href="https://github.com/Pumyk/REX-Player/releases"><img src="https://img.shields.io/github/downloads/Pumyk/REX-Player/total?logo=Github"/></a>
+  <img src="https://img.shields.io/github/stars/Pumyk/REX-Player?style=flat&logo=github" />
 </p>
 
 <p align="center">
@@ -22,7 +22,10 @@
 
 
 > [!NOTE]
-> **Repository moved**: from `sfsakhawat999/mpvRex` to [mpvRex/REX-Player](https://github.com/mpvRex/REX-Player). Old links will redirect automatically.
+> **This is a personal fork.** It is based on [mpvRex/REX-Player](https://github.com/mpvRex/REX-Player) (Apache-2.0)
+> and also incorporates code from mpvRx, mpvEx and mpv-android. Downloads, releases and bug reports for
+> **this** build belong here: [github.com/Pumyk/REX-Player/releases](https://github.com/Pumyk/REX-Player/releases).
+> For the upstream project, see [mpvRex/REX-Player](https://github.com/mpvRex/REX-Player).
 
 REX Player is an advanced, customizable video player for Android. It combines the versatility of libmpv with a modern Jetpack Compose interface and unique user-centric features.
 
@@ -60,15 +63,10 @@ REX Player is an advanced, customizable video player for Android. It combines th
 ## Installation
 
 <div align="center">
-  <a href="https://github.com/mpvRex/REX-Player/releases">
+  <a href="https://github.com/Pumyk/REX-Player/releases">
     <img src="https://img.shields.io/badge/Download-Stable_Release-blue?style=for-the-badge&logo=github" alt="Stable Release">
   </a>
-  <a href="https://mpvrex.github.io/REX-Player">
-    <img src="https://img.shields.io/badge/Download-Preview_Build-orange?style=for-the-badge&logo=github" alt="Preview Release">
-  </a>
 </div>
-
-<p align="center"><i>Preview builds may be unstable and are intended for testing only.</i></p>
 
 ---
 
