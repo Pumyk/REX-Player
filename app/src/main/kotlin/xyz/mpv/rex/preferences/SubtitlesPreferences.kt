@@ -86,6 +86,9 @@ class SubtitlesPreferences(
   val wyzieAiSubtitles = preferenceStore.getString("wyzie_ai_subtitles", "all")
 
   val subtitleSearchLanguages = subdlLanguages
+
+  /** mpvRx naming for the same SubDL key; the ported hub sources use this name. */
+  val subDlApiKey = subdlApiKey
 }
 
 enum class SubtitleJustification(

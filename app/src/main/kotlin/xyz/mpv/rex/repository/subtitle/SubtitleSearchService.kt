@@ -20,6 +20,9 @@ import xyz.mpv.rex.preferences.SubtitlesPreferences
 import xyz.mpv.rex.repository.subtitlehub.MpvRxSubtitleHubRepository
 import xyz.mpv.rex.repository.wyzie.WyzieSearchRepository
 import xyz.mpv.rex.repository.wyzie.WyzieSubtitle
+import xyz.mpv.rex.repository.wyzie.WyzieErrorKind
+import xyz.mpv.rex.repository.wyzie.WyzieException
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
 class SubtitleSearchService(
@@ -52,13 +55,20 @@ class SubtitleSearchService(
           year = year,
         )
 
-      orchestrator
-        .search(request = request, mode = mode)
-        .map { results ->
+      val outcome = orchestrator.search(request = request, mode = mode)
+
+      // Keep REX's specific error messages: a keyless engine that fails is a network
+      // or server problem, while a keyed engine with no key says exactly that.
+      outcome.fold(
+        onSuccess = { results ->
           originals.clear()
           results.forEach { originals[it.url] = it }
-          results.map { it.toWyzieSubtitle() }
-        }
+          Result.success(results.map { it.toWyzieSubtitle() })
+        },
+        onFailure = { error ->
+          Result.failure(classify(error, mode))
+        },
+      )
     }
 
   suspend fun download(
@@ -82,6 +92,26 @@ class SubtitleSearchService(
         SubtitleProvider.MPVRX_SUBTITLE_HUB ->
           subtitleHubRepository.download(original, mediaTitle)
       }
+    }
+
+  private fun classify(
+    error: Throwable,
+    mode: OnlineSubtitleSearchMode,
+  ): Throwable =
+    when {
+      error is WyzieException -> error
+      mode == OnlineSubtitleSearchMode.WYZIE && preferences.wyzieApiKey.get().isBlank() ->
+        WyzieException(
+          kind = WyzieErrorKind.MissingApiKey,
+          message = "No subtitle API key configured",
+          cause = error,
+        )
+      else ->
+        WyzieException(
+          kind = if (error is IOException) WyzieErrorKind.NetworkError else WyzieErrorKind.ServerError,
+          message = error.message ?: "Subtitle search failed",
+          cause = error,
+        )
     }
 
   private fun OnlineSubtitle.toWyzieSubtitle(): WyzieSubtitle =
