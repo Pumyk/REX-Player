@@ -47,6 +47,17 @@ enum class AppTheme(
     backgroundDark = Color(0xFF1C1B1F),
     isDynamic = true,
   ),
+  Aurora(
+    titleRes = R.string.theme_aurora,
+    primaryLight = Color(0xFF0B3FA0),
+    primaryDark = Color(0xFF5B93FF),
+    secondaryLight = Color(0xFF5C6B8C),
+    secondaryDark = Color(0xFF9FAEC9),
+    tertiaryLight = Color(0xFF3648A6),
+    tertiaryDark = Color(0xFF97A8FF),
+    backgroundLight = Color(0xFFF3F6FF),
+    backgroundDark = Color(0xFF04070F),
+  ),
   Catppuccin(
     titleRes = R.string.theme_catppuccin,
     primaryLight = Color(0xFF4C6B9A),

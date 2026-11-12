@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.ViewQuilt
@@ -133,11 +134,18 @@ object PreferencesScreen : Screen {
             PreferenceSection(title = stringResource(R.string.pref_category_ui_appearance)) {
               GroupedListColumn {
                 PreferenceItem(
-                  position = GroupPosition.ONLY,
+                  position = GroupPosition.FIRST,
                   title = stringResource(id = R.string.pref_appearance_title),
                   summary = stringResource(id = R.string.pref_appearance_summary),
                   icon = Icons.Outlined.Palette,
                   onClick = { backstack.add(AppearancePreferencesScreen) },
+                )
+                PreferenceItem(
+                  position = GroupPosition.LAST,
+                  title = stringResource(id = R.string.pref_app_icon_title),
+                  summary = stringResource(id = R.string.pref_app_icon_summary),
+                  icon = Icons.Outlined.Apps,
+                  onClick = { backstack.add(AppIconPreferencesScreen) },
                 )
               }
             }

@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base splash theme the per-icon themes above inherit from (dotted names imply the parent). -->
+    <style name="Theme.rex.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_purple_animated</item>
+        <item name="postSplashScreenTheme">@style/Theme.mpvex</item>
+    </style>
+    <!-- One system splash per launcher icon pair: the icon's background behind its logo. Android 13+ applies the
+         one for the chosen icon through LauncherIconManager; older versions keep Theme.rex.Splash. -->
+    <style name="Theme.rex.Splash.BlackSolid">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_solid_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+    </style>
+    <style name="Theme.rex.Splash.BlackGradient">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+    </style>
+    <style name="Theme.rex.Splash.BlackWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+    </style>
+    <style name="Theme.rex.Splash.WhiteSolid">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_solid_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_white</item>
+    </style>
+    <style name="Theme.rex.Splash.WhiteGradient">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_white</item>
+    </style>
+    <style name="Theme.rex.Splash.WhiteBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_white</item>
+    </style>
+    <style name="Theme.rex.Splash.CharcoalSolid">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_solid_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_charcoal</item>
+    </style>
+    <style name="Theme.rex.Splash.CharcoalGradient">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_charcoal</item>
+    </style>
+    <style name="Theme.rex.Splash.CharcoalWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_charcoal</item>
+    </style>
+    <style name="Theme.rex.Splash.IndigoSolid">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_solid_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_indigo</item>
+    </style>
+    <style name="Theme.rex.Splash.IndigoWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_indigo</item>
+    </style>
+    <style name="Theme.rex.Splash.VioletSolid">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_solid_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_violet</item>
+    </style>
+    <style name="Theme.rex.Splash.VioletWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_violet</item>
+    </style>
+    <style name="Theme.rex.Splash.LagoonWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_lagoon</item>
+    </style>
+    <style name="Theme.rex.Splash.LagoonBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_lagoon</item>
+    </style>
+    <style name="Theme.rex.Splash.AzureSolid">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_solid_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_azure</item>
+    </style>
+    <style name="Theme.rex.Splash.AzureGradient">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_azure</item>
+    </style>
+    <style name="Theme.rex.Splash.AzureBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_azure</item>
+    </style>
+    <style name="Theme.rex.Splash.LilacSolid">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_solid_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_lilac</item>
+    </style>
+    <style name="Theme.rex.Splash.LilacGradient">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_lilac</item>
+    </style>
+    <style name="Theme.rex.Splash.LilacBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_lilac</item>
+    </style>
+    <style name="Theme.rex.Splash.MintSolid">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_solid_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_mint</item>
+    </style>
+    <style name="Theme.rex.Splash.MintGradient">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_purple_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_mint</item>
+    </style>
+    <style name="Theme.rex.Splash.MintBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_mint</item>
+    </style>
+    <style name="Theme.rex.Splash.EmberWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_ember</item>
+    </style>
+    <style name="Theme.rex.Splash.EmberBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_ember</item>
+    </style>
+    <style name="Theme.rex.Splash.BlackClassic">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_classic_inset</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+    </style>
+    <style name="Theme.rex.Splash.WhiteClassic">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_classic_inset</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_white</item>
+    </style>
+    <style name="Theme.rex.Splash.CharcoalClassic">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_classic_inset</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_charcoal</item>
+    </style>
+    <style name="Theme.rex.Splash.IndigoClassic">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_classic_inset</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_indigo</item>
+    </style>
+    <style name="Theme.rex.Splash.VioletClassic">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_classic_inset</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_violet</item>
+    </style>
+    <style name="Theme.rex.Splash.AzureClassic">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_classic_inset</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_azure</item>
+    </style>
+    <style name="Theme.rex.Splash.LilacClassic">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_classic_inset</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_lilac</item>
+    </style>
+    <style name="Theme.rex.Splash.MintClassic">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_classic_inset</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_mint</item>
+    </style>
+    <style name="Theme.rex.Splash.CrimsonWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_crimson</item>
+    </style>
+    <style name="Theme.rex.Splash.CrimsonBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_crimson</item>
+    </style>
+    <style name="Theme.rex.Splash.RoseWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_rose</item>
+    </style>
+    <style name="Theme.rex.Splash.RoseBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_rose</item>
+    </style>
+    <style name="Theme.rex.Splash.PeachWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_peach</item>
+    </style>
+    <style name="Theme.rex.Splash.PeachBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_peach</item>
+    </style>
+    <style name="Theme.rex.Splash.AmberWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_amber</item>
+    </style>
+    <style name="Theme.rex.Splash.AmberBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_amber</item>
+    </style>
+    <style name="Theme.rex.Splash.LemonWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_lemon</item>
+    </style>
+    <style name="Theme.rex.Splash.LemonBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_lemon</item>
+    </style>
+    <style name="Theme.rex.Splash.LimeWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_lime</item>
+    </style>
+    <style name="Theme.rex.Splash.LimeBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_lime</item>
+    </style>
+    <style name="Theme.rex.Splash.ForestWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_forest</item>
+    </style>
+    <style name="Theme.rex.Splash.ForestBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_forest</item>
+    </style>
+    <style name="Theme.rex.Splash.TealWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_teal</item>
+    </style>
+    <style name="Theme.rex.Splash.TealBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_teal</item>
+    </style>
+    <style name="Theme.rex.Splash.SkyWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_sky</item>
+    </style>
+    <style name="Theme.rex.Splash.SkyBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_sky</item>
+    </style>
+    <style name="Theme.rex.Splash.CobaltWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_cobalt</item>
+    </style>
+    <style name="Theme.rex.Splash.CobaltBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_cobalt</item>
+    </style>
+    <style name="Theme.rex.Splash.PlumWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_plum</item>
+    </style>
+    <style name="Theme.rex.Splash.PlumBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_plum</item>
+    </style>
+    <style name="Theme.rex.Splash.CocoaWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_cocoa</item>
+    </style>
+    <style name="Theme.rex.Splash.CocoaBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_cocoa</item>
+    </style>
+    <style name="Theme.rex.Splash.WallpaperWhite">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_white_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_wallpaper</item>
+    </style>
+    <style name="Theme.rex.Splash.WallpaperBlack">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_black_animated</item>
+        <item name="windowSplashScreenBackground">@color/icon_bg_wallpaper</item>
+    </style>
+</resources>

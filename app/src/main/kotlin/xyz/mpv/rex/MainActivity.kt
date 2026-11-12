@@ -101,6 +101,9 @@ class MainActivity : ComponentActivity() {
     
     PermissionUtils.setMediaAccessLauncher(mediaAccessLauncher)
 
+    // Repairs the launcher-icon aliases if a previous switch left none or several enabled.
+    runCatching { xyz.mpv.rex.ui.preferences.LauncherIconManager.reconcile(this) }
+
     // Register proxy lifecycle observer for network streaming
     lifecycle.addObserver(xyz.mpv.rex.ui.browser.networkstreaming.proxy.ProxyLifecycleObserver())
 
