@@ -24,8 +24,11 @@ import xyz.mpv.rex.repository.subtitle.SubtitleProvider
 import xyz.mpv.rex.repository.wyzie.WyzieLanguages
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -37,6 +40,7 @@ import okhttp3.Request
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import java.net.URL
+import java.util.Collections
 import java.net.URLEncoder
 
 class MpvRxSubtitleHubRepository(
@@ -67,43 +71,43 @@ class MpvRxSubtitleHubRepository(
         if (selectedSources.size == 1) {
           apiSources.requireApiKey(selectedSources.single())
         }
+
+        // REX change: mpvRx waited for every source to send a result before returning,
+        // so one slow site held the whole search open forever. Each source now has its
+        // own deadline and the search has an overall budget; whatever has arrived is
+        // used and the stragglers are cancelled.
+        val collected = Collections.synchronizedList(mutableListOf<OnlineSubtitle>())
+
         val results =
           coroutineScope {
-            val completedSources = Channel<List<OnlineSubtitle>>(selectedSources.size)
-            selectedSources.forEach { source ->
-              launch {
-                val providerResults =
-                  try {
-                    providerSemaphore.withPermit {
-                      if (source in MpvRxSubtitleHubSources.AUTHENTICATED_SOURCES) {
-                        apiSources.search(source, request, selectedLanguages())
-                      } else {
-                        when (source) {
-                          "subtitlecat_com" -> searchSubtitleCat(request.withEpisodeSearchQuery())
-                          "moviesubtitles_org" -> searchMovieSubtitlesOrg(request)
-                          "moviesubtitlesrt_com" -> searchMovieSubtitlesRt(request)
-                          "my_subs_co" -> searchMySubs(request)
-                          "tvsubtitles_net" -> searchTvSubtitles(request)
-                          else -> emptyList()
-                        }
+            val jobs =
+              selectedSources.map { source ->
+                async {
+                  val providerResults =
+                    try {
+                      withTimeout(SOURCE_TIMEOUT_MS) {
+                        providerSemaphore.withPermit { searchSource(source, request) }
                       }
+                    } catch (cancellation: CancellationException) {
+                      throw cancellation
+                    } catch (error: Exception) {
+                      Log.w(TAG, "Skipping $source after provider failure", error)
+                      emptyList()
                     }
-                  } catch (cancellation: CancellationException) {
-                    throw cancellation
-                  } catch (error: Exception) {
-                    Log.w(TAG, "Skipping $source after provider failure", error)
-                    emptyList()
-                  }
-                completedSources.send(providerResults)
-              }
-            }
 
-            buildList {
-              repeat(selectedSources.size) {
-                addAll(completedSources.receive())
-                onResults(normalizeSearchResults(this))
+                  if (providerResults.isNotEmpty()) {
+                    collected.addAll(providerResults)
+                    onResults(normalizeSearchResults(collected.toList()))
+                  }
+                  providerResults
+                }
               }
+
+            withTimeoutOrNull(SEARCH_BUDGET_MS) { jobs.awaitAll() }
+            jobs.forEach { job ->
+              if (!job.isCompleted) job.cancel()
             }
+            collected.toList()
           }
 
         Result.success(normalizeSearchResults(results))
@@ -112,6 +116,23 @@ class MpvRxSubtitleHubRepository(
       } catch (e: Exception) {
         Log.e(TAG, "mpvRx SubtitleHub search failed", e)
         Result.failure(e)
+      }
+    }
+
+  private suspend fun searchSource(
+    source: String,
+    request: OnlineSubtitleSearchRequest,
+  ): List<OnlineSubtitle> =
+    if (source in MpvRxSubtitleHubSources.AUTHENTICATED_SOURCES) {
+      apiSources.search(source, request, selectedLanguages())
+    } else {
+      when (source) {
+        "subtitlecat_com" -> searchSubtitleCat(request.withEpisodeSearchQuery())
+        "moviesubtitles_org" -> searchMovieSubtitlesOrg(request)
+        "moviesubtitlesrt_com" -> searchMovieSubtitlesRt(request)
+        "my_subs_co" -> searchMySubs(request)
+        "tvsubtitles_net" -> searchTvSubtitles(request)
+        else -> emptyList()
       }
     }
 
@@ -861,6 +882,12 @@ class MpvRxSubtitleHubRepository(
   private companion object {
     const val TAG = "mpvRxSubtitleHub"
     const val MAX_CONCURRENT_PROVIDER_REQUESTS = 4
+
+    /** Per-source deadline. A single dead site can no longer stall the search. */
+    const val SOURCE_TIMEOUT_MS = 12_000L
+
+    /** Overall search budget. Results that arrived by then are shown. */
+    const val SEARCH_BUDGET_MS = 22_000L
     const val USER_AGENT =
       "Mozilla/5.0 (Linux; Android 14; mpvRx) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36"
     const val SUBTITLECAT_BASE_URL = "https://www.subtitlecat.com/"

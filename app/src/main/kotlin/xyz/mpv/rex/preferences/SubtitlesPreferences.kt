@@ -64,9 +64,12 @@ class SubtitlesPreferences(
   val wyzieApiKey = preferenceStore.getString("wyzie_api_key", "")
 
   // --- Ported from mpvRx: online subtitle search core -------------------------
-  /** Which engine online search uses. SUBHUB needs no API key, so it is the default. */
+  /**
+   * Which engine online search uses. Hybrid matches mpvRx's default: the keyless
+   * sources answer even when no API key is configured, and Wyzie joins in when one is.
+   */
   val onlineSubtitleSearchMode =
-    preferenceStore.getEnum("online_subtitle_search_mode", OnlineSubtitleSearchMode.SUBHUB)
+    preferenceStore.getEnum("online_subtitle_search_mode", OnlineSubtitleSearchMode.HYBRID)
 
   /** Sources used by the keyless subtitle hub. "all" means every keyless source. */
   val subtitleHubSources =

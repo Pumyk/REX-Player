@@ -338,19 +338,30 @@ class SubtitleManager(
         searchSubtitlesJob = scope.launch {
             _isSearchingSub.value = true
             clearSearchError()
-            subtitleSearchService.search(query, season, episode, year)
-                .onSuccess { results ->
-                    _wyzieSearchResults.value = results
-                    _hasSearched.value = true
-                }
-                .onFailure { error ->
-                    if (error is CancellationException) return@launch
-                    Log.e(TAG, "Subtitle search failed", error)
-                    _wyzieSearchResults.value = emptyList()
-                    _hasSearched.value = false
-                    reportError(error)
-                }
-            _isSearchingSub.value = false
+            try {
+                subtitleSearchService
+                    .searchIncremental(query, season, episode, year) { partial ->
+                        // Show results as each source answers instead of waiting for all.
+                        if (partial.isNotEmpty()) {
+                            _wyzieSearchResults.value = partial
+                            _hasSearched.value = true
+                        }
+                    }
+                    .onSuccess { results ->
+                        _wyzieSearchResults.value = results
+                        _hasSearched.value = true
+                    }
+                    .onFailure { error ->
+                        if (error is CancellationException) return@launch
+                        Log.e(TAG, "Subtitle search failed", error)
+                        _wyzieSearchResults.value = emptyList()
+                        _hasSearched.value = false
+                        reportError(error)
+                    }
+            } finally {
+                // Never leave the sheet spinning, even on cancellation.
+                _isSearchingSub.value = false
+            }
         }
     }
 

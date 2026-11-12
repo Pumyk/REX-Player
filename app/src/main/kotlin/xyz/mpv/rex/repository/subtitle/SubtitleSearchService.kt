@@ -16,6 +16,7 @@ package xyz.mpv.rex.repository.subtitle
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import xyz.mpv.rex.preferences.SubtitlesPreferences
 import xyz.mpv.rex.repository.subtitlehub.MpvRxSubtitleHubRepository
 import xyz.mpv.rex.repository.wyzie.WyzieSearchRepository
@@ -24,6 +25,7 @@ import xyz.mpv.rex.repository.wyzie.WyzieErrorKind
 import xyz.mpv.rex.repository.wyzie.WyzieException
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 
 class SubtitleSearchService(
   private val orchestrator: OnlineSubtitleOrchestrator,
@@ -44,6 +46,19 @@ class SubtitleSearchService(
     season: Int? = null,
     episode: Int? = null,
     year: String? = null,
+  ): Result<List<WyzieSubtitle>> = searchIncremental(query, season, episode, year)
+
+  /**
+   * Same search, but [onPartial] fires as each source answers, so the sheet can fill
+   * in while slower sites are still being queried. The whole thing is bounded, so the
+   * spinner always ends even if every source is unreachable.
+   */
+  suspend fun searchIncremental(
+    query: String,
+    season: Int? = null,
+    episode: Int? = null,
+    year: String? = null,
+    onPartial: (List<WyzieSubtitle>) -> Unit = {},
   ): Result<List<WyzieSubtitle>> =
     withContext(Dispatchers.IO) {
       val mode = preferences.onlineSubtitleSearchMode.get()
@@ -54,22 +69,48 @@ class SubtitleSearchService(
           episode = episode,
           year = year,
         )
+      val latest = AtomicReference<List<OnlineSubtitle>>(emptyList())
 
-      val outcome = orchestrator.search(request = request, mode = mode)
+      val settled =
+        withTimeoutOrNull(TOTAL_SEARCH_TIMEOUT_MS) {
+          orchestrator.search(
+            request = request,
+            mode = mode,
+            onResults = { partial ->
+              latest.set(partial)
+              remember(partial)
+              if (partial.isNotEmpty()) onPartial(partial.map { it.toWyzieSubtitle() })
+            },
+          )
+        }
 
-      // Keep REX's specific error messages: a keyless engine that fails is a network
-      // or server problem, while a keyed engine with no key says exactly that.
-      outcome.fold(
-        onSuccess = { results ->
-          originals.clear()
-          results.forEach { originals[it.url] = it }
-          Result.success(results.map { it.toWyzieSubtitle() })
-        },
-        onFailure = { error ->
-          Result.failure(classify(error, mode))
-        },
-      )
+      if (settled == null) {
+        // Budget spent. Show what arrived rather than spinning forever.
+        val partial = latest.get()
+        if (partial.isNotEmpty()) {
+          Result.success(partial.map { it.toWyzieSubtitle() })
+        } else {
+          Result.failure(
+            WyzieException(
+              kind = WyzieErrorKind.NetworkError,
+              message = "Subtitle search timed out",
+            ),
+          )
+        }
+      } else {
+        settled.fold(
+          onSuccess = { results ->
+            remember(results)
+            Result.success(results.map { it.toWyzieSubtitle() })
+          },
+          onFailure = { error -> Result.failure(classify(error, mode)) },
+        )
+      }
     }
+
+  private fun remember(results: List<OnlineSubtitle>) {
+    results.forEach { originals[it.url] = it }
+  }
 
   suspend fun download(
     subtitle: WyzieSubtitle,
@@ -148,4 +189,9 @@ class SubtitleSearchService(
       downloadCount = downloadCount,
       isHearingImpaired = isHearingImpaired,
     )
+
+  private companion object {
+    /** Hard ceiling on a search. The sheet stops spinning here no matter what. */
+    const val TOTAL_SEARCH_TIMEOUT_MS = 28_000L
+  }
 }

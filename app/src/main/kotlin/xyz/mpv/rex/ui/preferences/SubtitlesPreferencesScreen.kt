@@ -60,6 +60,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import xyz.mpv.rex.R
 import xyz.mpv.rex.preferences.SubtitlesPreferences
+import xyz.mpv.rex.repository.subtitle.OnlineSubtitleSearchMode
+import xyz.mpv.rex.repository.subtitlehub.MpvRxSubtitleHubSources
 import xyz.mpv.rex.preferences.preference.collectAsState
 import xyz.mpv.rex.presentation.Screen
 import xyz.mpv.rex.presentation.components.GroupPosition
@@ -80,6 +82,7 @@ import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import xyz.mpv.rex.ui.preferences.components.SwitchPreference
 import me.zhanghai.compose.preference.TextFieldPreference
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.TextButton
 import android.net.Uri
@@ -524,11 +527,60 @@ object SubtitlesPreferencesScreen : Screen {
             var showClearDialog by remember { mutableStateOf(false) }
             val scope = androidx.compose.runtime.rememberCoroutineScope()
             val subdlLanguages by preferences.subdlLanguages.collectAsState()
+            val searchMode by preferences.onlineSubtitleSearchMode.collectAsState()
+            val hubSources by preferences.subtitleHubSources.collectAsState()
             var showAdvanced by remember { mutableStateOf(false) }
 
             GroupedListColumn {
               GroupedPreferenceCard(
                 position = GroupPosition.FIRST,
+                highlightKey = "Search mode",
+              ) {
+                SingleChoicePreference(
+                  title = { Text("Search mode") },
+                  summary = {
+                    Text(
+                      text = when (searchMode) {
+                        OnlineSubtitleSearchMode.WYZIE -> "Wyzie"
+                        OnlineSubtitleSearchMode.SUBHUB -> "SubHub"
+                        OnlineSubtitleSearchMode.HYBRID -> "Hybrid"
+                      },
+                      color = MaterialTheme.colorScheme.outline,
+                    )
+                  },
+                  options = linkedMapOf(
+                    OnlineSubtitleSearchMode.WYZIE to "Wyzie",
+                    OnlineSubtitleSearchMode.SUBHUB to "SubHub",
+                    OnlineSubtitleSearchMode.HYBRID to "Hybrid",
+                  ),
+                  selected = searchMode,
+                  onSelect = { preferences.onlineSubtitleSearchMode.set(it) },
+                )
+              }
+
+              GroupedPreferenceCard(
+                position = GroupPosition.MIDDLE,
+                highlightKey = "SubHub sources",
+              ) {
+                MultiChoicePreference(
+                  title = { Text("SubHub sources") },
+                  summary = {
+                    val summaryText = if (hubSources.isEmpty() || hubSources.contains("all")) {
+                      "All sources without an API key"
+                    } else {
+                      hubSources.mapNotNull { MpvRxSubtitleHubSources.ALL[it] }.joinToString(", ")
+                    }
+                    Text(summaryText, color = MaterialTheme.colorScheme.outline)
+                  },
+                  values = MpvRxSubtitleHubSources.ALL,
+                  selectedValues = hubSources,
+                  onValuesChange = { preferences.subtitleHubSources.set(it) },
+                  hasAllOption = true,
+                )
+              }
+
+              GroupedPreferenceCard(
+                position = GroupPosition.MIDDLE,
                 highlightKey = R.string.pref_subtitles_wyzie_api_key_title,
               ) {
                 Column {
@@ -956,6 +1008,65 @@ private fun SubtitleApiKeyField(
         focusedContainerColor = MaterialTheme.colorScheme.surface,
         unfocusedContainerColor = MaterialTheme.colorScheme.surface
       )
+    )
+  }
+}
+
+/**
+ * Single-choice preference, mirroring mpvRx's search-mode picker. REX had multi-select
+ * pickers only; the subtitle engine needs one engine to be the active answer.
+ */
+@Composable
+fun <T> SingleChoicePreference(
+  title: @Composable () -> Unit,
+  summary: @Composable () -> Unit,
+  options: Map<T, String>,
+  selected: T,
+  onSelect: (T) -> Unit,
+) {
+  var showDialog by remember { mutableStateOf(false) }
+
+  Preference(
+    title = title,
+    summary = summary,
+    onClick = { showDialog = true },
+  )
+
+  if (showDialog) {
+    AlertDialog(
+      onDismissRequest = { showDialog = false },
+      title = title,
+      text = {
+        Column {
+          options.forEach { (value, label) ->
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                  onSelect(value)
+                  showDialog = false
+                }
+                .padding(vertical = 8.dp),
+              verticalAlignment = Alignment.CenterVertically,
+            ) {
+              RadioButton(
+                selected = value == selected,
+                onClick = {
+                  onSelect(value)
+                  showDialog = false
+                },
+              )
+              Spacer(modifier = Modifier.width(8.dp))
+              Text(text = label)
+            }
+          }
+        }
+      },
+      confirmButton = {
+        TextButton(onClick = { showDialog = false }) {
+          Text(stringResource(android.R.string.cancel))
+        }
+      },
     )
   }
 }
